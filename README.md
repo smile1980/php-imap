@@ -20,7 +20,7 @@
 
 ### Installation by Composer
 
-	$ composer require php-imap/php-imap
+	$ composer require smile1980/php-imap
 	
 ### Integration with frameworks
 
