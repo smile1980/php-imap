@@ -706,17 +706,48 @@ class Mailbox {
 		}
 	}
 
-	protected function decodeMimeStr($string, $toCharset = 'utf-8'){
-		$newString = '';
+    protected function decodeMimeStr($string, $toCharset = 'utf-8')
+    {
+        $items = [];
 
-		foreach (imap_mime_header_decode(imap_utf8($string)) as $element) {
-		    if (isset($element->text)) {
-			$newString .= $element->text;
-		    }
-		}
+        $item = [];
 
-		return $this->convertStringEncoding($newString, 'utf-8', $toCharset);
-	}
+        foreach (imap_mime_header_decode($string) as $element) {
+
+            if (isset($element->text)) {
+
+                $charset = !isset($element->charset) || $element->charset == 'default' ? 'iso-8859-1' : $element->charset;
+
+                if (!$item) {
+
+                    $item['charset'] = $charset;
+                    $item['text'] = '';
+
+                } else if ($item['charset'] !== $charset) {
+
+                    $items[] = $item;
+
+                    $item['charset'] = $charset;
+                    $item['text'] = '';
+
+                }
+
+                $item['text'] .= $element->text;
+
+            }
+
+        }
+
+        if ($item)
+            $items[] = $item;
+
+        return array_reduce($items, function ($carry, $item) use ($toCharset) {
+
+            return $this->convertStringEncoding($item['text'], $item['charset'], $toCharset);
+
+        }, '');
+
+    }
 
 	function isUrlEncoded($string) {
 		$hasInvalidChars = preg_match('#[^%a-zA-Z0-9\-_\.\+]#', $string);
